@@ -2,11 +2,12 @@ import WdkSecretManager, {wdkSaltGenerator} from "../index.js";
 import crypto from "crypto";
 
 try {
-    const wdkManager = new WdkSecretManager('1234', crypto.randomBytes(16));
+    const salt = wdkSaltGenerator.generate()
+    const wdkManager = new WdkSecretManager('1234', salt);
     wdkManager.deriveKeyFromPassKey().then(res => {
         console.log(res.toString('hex'));
     })
-    const salt = wdkSaltGenerator.generate()
+
     console.log('salt => ', salt)
     const phrase = wdkManager.generateRandomSeed()
     console.log('phrase =>', phrase);

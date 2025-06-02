@@ -6,10 +6,10 @@ import sodium from 'sodium-universal'
 
 /**
  *
- * @type {{generate: (function(): string)}}
+ * @type {{generate: (function(): Buffer)}}
  */
 export const wdkSaltGenerator = {
-    generate: () => crypto.randomBytes(16).toString('hex')
+    generate: () => crypto.randomBytes(16)
 };
 
 export default class WdkSecretManager {

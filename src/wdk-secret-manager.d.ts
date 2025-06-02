@@ -1,9 +1,9 @@
 /**
  *
- * @type {{generate: (function(): string)}}
+ * @type {{generate: (function(): Buffer)}}
  */
 export const wdkSaltGenerator: {
-    generate: (() => string);
+    generate: (() => Buffer);
 };
 export default class WdkSecretManager {
     /**
