@@ -15,16 +15,6 @@ export default class WdkSecretManager {
      */
     constructor(passKey: string, salt?: Buffer);
     /**
-     *
-     * @param value
-     */
-    set salt(value: Buffer);
-    /**
-     *
-     * @return {Buffer}
-     */
-    get salt(): Buffer;
-    /**
      * Derives a strong, 32-byte (256-bit) cryptographic key from a user's password
      * Salt for preventing rainbow table attacks.
      * using the Argon2id algorithm.
