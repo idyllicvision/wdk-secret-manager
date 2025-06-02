@@ -1,0 +1,20 @@
+{
+  "name": "@wdk/wdk-secret-manager",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "build:types": "rimraf *.d.ts **/*.d.ts; tsc"
+  },
+  "author": "Tether",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "argon2": "^0.43.0",
+    "b4a": "^1.6.7",
+    "bip39": "^3.1.0",
+    "rimraf": "^5.0.10",
+    "sodium-universal": "^5.0.1",
+    "typescript": "^5.8.3"
+  }
+}
