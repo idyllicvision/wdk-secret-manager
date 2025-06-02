@@ -169,5 +169,14 @@ export default class WdkSecretManager {
         }
     }
 
+    /**
+     *
+     * Clean up variables.
+     */
+    destructor() {
+        this.#passkey = null;
+        this.#salt = null;
+    }
+
 
 }

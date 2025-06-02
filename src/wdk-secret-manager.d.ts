@@ -39,5 +39,10 @@ export default class WdkSecretManager {
      * @return {string} A string containing the random words.
      */
     generateRandomSeed(strength?: number): string;
+    /**
+     *
+     * Clean up variables.
+     */
+    destructor(): void;
     #private;
 }
