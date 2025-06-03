@@ -1,26 +1,39 @@
 import WdkSecretManager, {wdkSaltGenerator} from "../index.js";
-import crypto from "crypto";
+import bip39 from 'bip39';
 
 try {
     const salt = wdkSaltGenerator.generate()
+    console.log('[salt] ', salt)
     const wdkManager = new WdkSecretManager('1234', salt);
-    wdkManager.deriveKeyFromPassKey().then(res => {
-        console.log(res.toString('hex'));
-    })
 
-    console.log('salt => ', salt)
-    const phrase = wdkManager.generateRandomSeed()
-    console.log('phrase =>', phrase);
-    const encrypted = await wdkManager.encrypt(phrase)
-    console.log('encrypted phrase =>', encrypted);
-    const decrypted = await wdkManager.decrypt(encrypted);
-    console.log('decrypted phrase =>', decrypted);
-    if (phrase === decrypted) {
-        console.log('Decryption works!!!!');
+    const entropy = wdkManager.generateRandomBuffer();
+    const entropyCopy = Buffer.from(entropy);
+    console.log('[entropy] ', entropy);
+    const phrase = bip39.entropyToMnemonic(entropy);
+    console.log('[phrase] ', phrase);
+    const encrypted = await wdkManager.encrypt(entropy)
+    console.log('[encrypted phrase] ', encrypted);
+
+
+    const decryptedSeed = await wdkManager.decrypt(encrypted.encryptedSeed);
+    console.log('[decryptedSeed buffer] ', decryptedSeed);
+
+    const decryptedEntropy = await wdkManager.decrypt(encrypted.encryptedEntropy);
+    console.log('[decryptedEntropy buffer] ', decryptedEntropy);
+    const decryptedPhrase = wdkManager.entropyToMnemonic(decryptedEntropy)
+    console.log('[decryptedMnemonicPhrase] ', decryptedPhrase);
+    if (decryptedSeed.equals(encrypted.seedBuffer)) {
+        console.log('Seed Decryption works!!!!');
+    } else {
+        console.log('Decryption doesn\'t works');
+    }
+
+    if (entropyCopy.equals(decryptedEntropy)) {
+        console.log('Entropy Decryption works!!!!');
     } else {
         console.log('Decryption doesn\'t works');
     }
 } catch (e) {
-    console.error('Error ', e.message);
+    console.log(e)
 }
 

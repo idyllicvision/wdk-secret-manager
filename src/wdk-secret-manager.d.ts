@@ -23,22 +23,31 @@ export default class WdkSecretManager {
     deriveKeyFromPassKey(): Promise<Buffer>;
     /**
      * Encrypts a BIP39 mnemonic phrase.
-     * @param {string} phrase - The mnemonic phrase to encrypt.
-     * @return {Promise<Buffer>} A Buffer containing the encrypted payload.
+     * @param {Buffer} entropy.
+     * @return {Promise<{encryptedSeed, encryptedEntropy, seedBuffer}>} A Object containing the encrypted seed/entropy and seed Buffer.
      */
-    encrypt(phrase: string): Promise<Buffer>;
+    encrypt(entropy: any): Promise<{
+        encryptedSeed: any;
+        encryptedEntropy: any;
+        seedBuffer: any;
+    }>;
     /**
      * Decrypts a payload to retrieve a BIP39 mnemonic phrase.
      * @param {Buffer} payload - The encrypted payload.
-     * @return {Promise<string>} The decrypted mnemonic phrase.
+     * @return {Promise<Buffer>} The decrypted mnemonic phrase.
      */
-    decrypt(payload: Buffer): Promise<string>;
+    decrypt(payload: Buffer): Promise<Buffer>;
     /**
-     * Generates a random BIP39 mnemonic phrase (12 words by default for 128 bits).
-     * @param {number} [strength=128] - The desired bit strength for the mnemonic.
-     * @return {string} A string containing the random words.
+     * Generates a random 128 bits buffer
+     * @return {Buffer} Which can be converted BIP39 mnemonic phrase (12 words).
      */
-    generateRandomSeed(strength?: number): string;
+    generateRandomBuffer(): Buffer;
+    /**
+     *
+     * @param {Buffer} entropy - 128 bits entropy buffer.
+     * @return {string} - BIP39 mnemonic phrase (12 words by default for 128 bits).
+     */
+    entropyToMnemonic(entropy: Buffer): string;
     /**
      *
      * Clean up variables.

@@ -68,84 +68,106 @@ export default class WdkSecretManager {
 
     /**
      * Encrypts a BIP39 mnemonic phrase.
-     * @param {string} phrase - The mnemonic phrase to encrypt.
+     * @param {Buffer} entropy.
+     * @return {Promise<{encryptedSeed, encryptedEntropy, seedBuffer}>} A Object containing the encrypted seed/entropy and seed Buffer.
+     */
+    async encrypt(entropy) {
+        if (!b4a.isBuffer(entropy)) throw new Error('Payload is not a buffer')
+        const seedBuffer = bip39.mnemonicToSeedSync(bip39.entropyToMnemonic(entropy))
+        const cpSeedBuffer = Buffer.from(seedBuffer);
+        const encryptedSeed = await this.#encryptor(seedBuffer, seedBuffer.length);
+
+        const encryptedEntropy = await this.#encryptor(entropy, entropy.length);
+
+        return {encryptedSeed, encryptedEntropy, ...{seedBuffer: cpSeedBuffer}};
+    }
+
+    /**
+     * Encrypts a BIP39 mnemonic phrase.
+     * @param {Buffer} buffer.
+     * @param {number} buffLength.
      * @return {Promise<Buffer>} A Buffer containing the encrypted payload.
      */
-    async encrypt(phrase) {
-        try {
-            const key = await this.deriveKeyFromPassKey();
+    async #encryptor(buffer, buffLength) {
+        if (!b4a.isBuffer(buffer)) throw new Error('Payload is not a buffer')
+        if (!buffLength) throw new Error('Incorrect buffer length');
+        const key = await this.deriveKeyFromPassKey();
 
-            const entropy = b4a.from(bip39.mnemonicToEntropy(phrase), 'hex')
-            if (entropy.byteLength > 32) throw new Error('Phrase is too long')
+        if (buffer.byteLength > 64 || buffer.byteLength < 16) throw new Error('Phrase is too long')
 
-            const payload = b4a.alloc(1 + sodium.crypto_secretbox_NONCEBYTES + 1 + 32 + sodium.crypto_secretbox_MACBYTES)
-            payload[0] = 0 // version
+        const payload = b4a.alloc(1 + sodium.crypto_secretbox_NONCEBYTES + 1 + buffLength + sodium.crypto_secretbox_MACBYTES)
+        payload[0] = 0 // version
 
-            const nonce = payload.subarray(1, 1 + sodium.crypto_secretbox_NONCEBYTES)
-            const cipher = payload.subarray(1 + nonce.byteLength)
-            const plain = cipher.subarray(0, cipher.byteLength - sodium.crypto_secretbox_MACBYTES)
-            plain[0] = entropy.byteLength
-            plain.set(entropy, 1)
+        const nonce = payload.subarray(1, 1 + sodium.crypto_secretbox_NONCEBYTES)
+        const cipher = payload.subarray(1 + nonce.byteLength)
+        const plain = cipher.subarray(0, cipher.byteLength - sodium.crypto_secretbox_MACBYTES)
+        plain[0] = buffer.byteLength
+        plain.set(buffer, 1)
 
-            sodium.sodium_memzero(entropy)
-            sodium.randombytes_buf(nonce)
-            // encrypt in-place
-            sodium.crypto_secretbox_easy(cipher, plain, nonce, key)
+        sodium.sodium_memzero(buffer)
+        sodium.randombytes_buf(nonce)
+        // encrypt in-place
+        sodium.crypto_secretbox_easy(cipher, plain, nonce, key)
 
-            return payload
-        } catch (error) {
-            throw new Error(error);
-        }
-
+        return payload
     }
 
     /**
      * Decrypts a payload to retrieve a BIP39 mnemonic phrase.
      * @param {Buffer} payload - The encrypted payload.
-     * @return {Promise<string>} The decrypted mnemonic phrase.
+     * @return {Promise<Buffer>} The decrypted mnemonic phrase.
      */
     async decrypt(payload) {
-        if (payload.byteLength < 1 + sodium.crypto_secretbox_NONCEBYTES + 1 + 32 + sodium.crypto_secretbox_MACBYTES) {
-            throw new Error('Invalid payload')
+        if (!b4a.isBuffer(payload)) {
+            throw new Error('Payload is not a buffer')
+        }
+        const minLength = 1 + sodium.crypto_secretbox_NONCEBYTES + 1 + sodium.crypto_secretbox_MACBYTES;
+        if (payload.byteLength < minLength) {
+            throw new Error('Invalid payload: too short');
         }
 
 
         if (payload[0] !== 0) {
             throw new Error('Invalid version')
         }
+        const key = await this.deriveKeyFromPassKey();
 
-        try {
-            const key = await this.deriveKeyFromPassKey();
+        const nonce = payload.subarray(1, 1 + sodium.crypto_secretbox_NONCEBYTES)
+        const cipher = payload.subarray(1 + nonce.byteLength)
+        const plain = cipher.subarray(0, cipher.byteLength - sodium.crypto_secretbox_MACBYTES)
 
-            const nonce = payload.subarray(1, 1 + sodium.crypto_secretbox_NONCEBYTES)
-            const cipher = payload.subarray(1 + nonce.byteLength)
-            const plain = cipher.subarray(0, cipher.byteLength - sodium.crypto_secretbox_MACBYTES)
-
-            if (!sodium.crypto_secretbox_open_easy(plain, cipher, nonce, key)) {
-                throw new Error('Decryption failed')
-            }
-
-            const bytes = plain[0]
-            if (bytes > 32) {
-                throw new Error('Invalid decrypted payload')
-            }
-
-            const entropy = plain.subarray(1, 1 + bytes)
-            return bip39.entropyToMnemonic(b4a.toString(entropy, 'hex'))
-        } catch (error) {
-            throw new Error(error);
+        if (!sodium.crypto_secretbox_open_easy(plain, cipher, nonce, key)) {
+            throw new Error('Decryption failed')
         }
 
+        const bytes = plain[0]
+        if (bytes > 64) {
+            throw new Error('Invalid decrypted payload')
+        }
 
+        if (plain.byteLength < 1 + bytes) {
+            throw new Error('Invalid decrypted payload: inconsistent length');
+        }
+
+        return plain.subarray(1, 1 + bytes)
     }
 
     /**
-     * Generates a random BIP39 mnemonic phrase (12 words by default for 128 bits).
-     * @param {number} [strength=128] - The desired bit strength for the mnemonic.
-     * @return {string} A string containing the random words.
+     * Generates a random 128 bits buffer
+     * @return {Buffer} Which can be converted BIP39 mnemonic phrase (12 words).
      */
-    generateRandomSeed(strength = 128) {
-        return bip39.generateMnemonic(strength);
+    generateRandomBuffer() {
+        return crypto.randomBytes(16);
+    }
+
+    /**
+     *
+     * @param {Buffer} entropy - 128 bits entropy buffer.
+     * @return {string} - BIP39 mnemonic phrase (12 words by default for 128 bits).
+     */
+    entropyToMnemonic(entropy) {
+        if (!b4a.isBuffer(entropy)) throw new Error('Payload is not a buffer')
+        return bip39.entropyToMnemonic(entropy);
     }
 
     #passKeyValidator(passKey) {
