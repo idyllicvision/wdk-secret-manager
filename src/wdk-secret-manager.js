@@ -75,9 +75,9 @@ export default class WdkSecretManager {
         if (!b4a.isBuffer(entropy)) throw new Error('Payload is not a buffer')
         const seedBuffer = bip39.mnemonicToSeedSync(bip39.entropyToMnemonic(entropy))
         const cpSeedBuffer = Buffer.from(seedBuffer);
-        const encryptedSeed = await this.#encryptor(seedBuffer, seedBuffer.length);
+        const encryptedSeed = await this.#encryptor(seedBuffer, seedBuffer.byteLength);
 
-        const encryptedEntropy = await this.#encryptor(entropy, entropy.length);
+        const encryptedEntropy = await this.#encryptor(entropy, entropy.byteLength);
 
         return {encryptedSeed, encryptedEntropy, ...{seedBuffer: cpSeedBuffer}};
     }
@@ -93,7 +93,7 @@ export default class WdkSecretManager {
         if (!buffLength) throw new Error('Incorrect buffer length');
         const key = await this.deriveKeyFromPassKey();
 
-        if (buffer.byteLength > 64 || buffer.byteLength < 16) throw new Error('Phrase is too long')
+        if (buffer.byteLength > 64 || buffer.byteLength < 16) throw new Error('Buffer size must be between 16 and 64')
 
         const payload = b4a.alloc(1 + sodium.crypto_secretbox_NONCEBYTES + 1 + buffLength + sodium.crypto_secretbox_MACBYTES)
         payload[0] = 0 // version
