@@ -1,6 +1,5 @@
 import crypto from 'crypto';
 import b4a from 'b4a';
-import * as argon2 from 'argon2';
 import bip39 from 'bip39';
 import sodium from 'sodium-universal'
 
@@ -43,23 +42,24 @@ export default class WdkSecretManager {
     /**
      * Derives a strong, 32-byte (256-bit) cryptographic key from a user's password
      * Salt for preventing rainbow table attacks.
-     * using the Argon2id algorithm.
-     * @return {Promise<Buffer>}
+     * using the pwhash algorithm.
+     * @return {Buffer}
      */
-    async deriveKeyFromPassKey() {
+    deriveKeyFromPassKey() {
         try {
             this.#passKeyValidator(this.#passkey);
             this.#saltValidator(this.#salt);
-            const options = {
-                salt: this.#salt,
-                type: argon2.argon2id,
-                memoryCost: 19456, // 19 MiB
-                timeCost: 2,
-                parallelism: 1,
-                hashLength: 32, // 32 bytes for a 256-bit AES key
-                raw: true, // IMPORTANT: This gives us the raw key
-            }
-            return await argon2.hash(this.#passkey, options);
+            const key = Buffer.alloc(32); // 32 bytes for a 256-bit key
+            console.log(key)
+            sodium.crypto_pwhash(
+                key,
+                Buffer.from(this.#passkey, 'utf-8'),
+                this.#salt,
+                sodium.crypto_pwhash_OPSLIMIT_INTERACTIVE,
+                sodium.crypto_pwhash_MEMLIMIT_INTERACTIVE,
+                sodium.crypto_pwhash_ALG_DEFAULT
+            );
+            return key
         } catch (error) {
             throw new Error(error);
         }
@@ -69,15 +69,15 @@ export default class WdkSecretManager {
     /**
      * Encrypts a BIP39 mnemonic phrase.
      * @param {Buffer} entropy.
-     * @return {Promise<{encryptedSeed, encryptedEntropy, seedBuffer}>} A Object containing the encrypted seed/entropy and seed Buffer.
+     * @return {encryptedSeed, encryptedEntropy, seedBuffer} A Object containing the encrypted seed/entropy and seed Buffer.
      */
-    async encrypt(entropy) {
+    encrypt(entropy) {
         if (!b4a.isBuffer(entropy)) throw new Error('Payload is not a buffer')
         const seedBuffer = bip39.mnemonicToSeedSync(bip39.entropyToMnemonic(entropy))
         const cpSeedBuffer = Buffer.from(seedBuffer);
-        const encryptedSeed = await this.#encryptor(seedBuffer, seedBuffer.byteLength);
+        const encryptedSeed = this.#encryptor(seedBuffer, seedBuffer.byteLength);
 
-        const encryptedEntropy = await this.#encryptor(entropy, entropy.byteLength);
+        const encryptedEntropy = this.#encryptor(entropy, entropy.byteLength);
 
         return {encryptedSeed, encryptedEntropy, ...{seedBuffer: cpSeedBuffer}};
     }
@@ -86,12 +86,12 @@ export default class WdkSecretManager {
      * Encrypts a BIP39 mnemonic phrase.
      * @param {Buffer} buffer.
      * @param {number} buffLength.
-     * @return {Promise<Buffer>} A Buffer containing the encrypted payload.
+     * @return {Buffer} A Buffer containing the encrypted payload.
      */
-    async #encryptor(buffer, buffLength) {
+    #encryptor(buffer, buffLength) {
         if (!b4a.isBuffer(buffer)) throw new Error('Payload is not a buffer')
         if (!buffLength) throw new Error('Incorrect buffer length');
-        const key = await this.deriveKeyFromPassKey();
+        const key = this.deriveKeyFromPassKey();
 
         if (buffer.byteLength > 64 || buffer.byteLength < 16) throw new Error('Buffer size must be between 16 and 64')
 
@@ -115,9 +115,9 @@ export default class WdkSecretManager {
     /**
      * Decrypts a payload to retrieve a BIP39 mnemonic phrase.
      * @param {Buffer} payload - The encrypted payload.
-     * @return {Promise<Buffer>} The decrypted mnemonic phrase.
+     * @return {Buffer} The decrypted mnemonic phrase.
      */
-    async decrypt(payload) {
+    decrypt(payload) {
         if (!b4a.isBuffer(payload)) {
             throw new Error('Payload is not a buffer')
         }
@@ -130,7 +130,7 @@ export default class WdkSecretManager {
         if (payload[0] !== 0) {
             throw new Error('Invalid version')
         }
-        const key = await this.deriveKeyFromPassKey();
+        const key = this.deriveKeyFromPassKey();
 
         const nonce = payload.subarray(1, 1 + sodium.crypto_secretbox_NONCEBYTES)
         const cipher = payload.subarray(1 + nonce.byteLength)

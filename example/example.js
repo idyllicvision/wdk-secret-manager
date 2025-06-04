@@ -5,20 +5,19 @@ try {
     const salt = wdkSaltGenerator.generate()
     console.log('[salt] ', salt)
     const wdkManager = new WdkSecretManager('1234', salt);
-
     const entropy = wdkManager.generateRandomBuffer();
     const entropyCopy = Buffer.from(entropy);
     console.log('[entropy] ', entropy);
     const phrase = bip39.entropyToMnemonic(entropy);
     console.log('[phrase] ', phrase);
-    const encrypted = await wdkManager.encrypt(entropy)
+    const encrypted = wdkManager.encrypt(entropy)
     console.log('[encrypted phrase] ', encrypted);
 
 
-    const decryptedSeed = await wdkManager.decrypt(encrypted.encryptedSeed);
+    const decryptedSeed = wdkManager.decrypt(encrypted.encryptedSeed);
     console.log('[decryptedSeed buffer] ', decryptedSeed);
 
-    const decryptedEntropy = await wdkManager.decrypt(encrypted.encryptedEntropy);
+    const decryptedEntropy = wdkManager.decrypt(encrypted.encryptedEntropy);
     console.log('[decryptedEntropy buffer] ', decryptedEntropy);
     const decryptedPhrase = wdkManager.entropyToMnemonic(decryptedEntropy)
     console.log('[decryptedMnemonicPhrase] ', decryptedPhrase);
