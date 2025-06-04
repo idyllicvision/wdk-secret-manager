@@ -45,7 +45,7 @@ export default class WdkSecretManager {
      * using the pwhash algorithm.
      * @return {Buffer}
      */
-    deriveKeyFromPassKey() {
+    #deriveKeyFromPassKey() {
         try {
             this.#passKeyValidator(this.#passkey);
             this.#saltValidator(this.#salt);
@@ -91,7 +91,7 @@ export default class WdkSecretManager {
     #encryptor(buffer, buffLength) {
         if (!b4a.isBuffer(buffer)) throw new Error('Payload is not a buffer')
         if (!buffLength) throw new Error('Incorrect buffer length');
-        const key = this.deriveKeyFromPassKey();
+        const key = this.#deriveKeyFromPassKey();
 
         if (buffer.byteLength > 64 || buffer.byteLength < 16) throw new Error('Buffer size must be between 16 and 64')
 
@@ -130,7 +130,7 @@ export default class WdkSecretManager {
         if (payload[0] !== 0) {
             throw new Error('Invalid version')
         }
-        const key = this.deriveKeyFromPassKey();
+        const key = this.#deriveKeyFromPassKey();
 
         const nonce = payload.subarray(1, 1 + sodium.crypto_secretbox_NONCEBYTES)
         const cipher = payload.subarray(1 + nonce.byteLength)
