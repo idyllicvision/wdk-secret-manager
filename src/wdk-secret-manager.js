@@ -189,8 +189,8 @@ export default class WdkSecretManager {
         if (!Buffer.isBuffer(salt)) {
             throw new Error('Salt must be a buffer!');
         }
-        if (salt.byteLength < 16) { // Argon2 typically recommends at least 8 bytes, 16 is common.
-            console.warn('Salt is less than 16 bytes. This is permissible, but 16 bytes is a common recommendation.');
+        if (salt.byteLength < 16) {
+            throw new Error('Salt must be at least 16 bytes!');
         }
     }
 
