@@ -15,28 +15,21 @@ export default class WdkSecretManager {
      */
     constructor(passKey: string, salt?: Buffer);
     /**
-     * Derives a strong, 32-byte (256-bit) cryptographic key from a user's password
-     * Salt for preventing rainbow table attacks.
-     * using the Argon2id algorithm.
-     * @return {Promise<Buffer>}
+     * Generate randomBytes(16) Entropy
+     * Convert Entropy to BIP39 mnemonic phrase
+     * Convert BIP39 mnemonic phrase to seed buffer
+     * Encrypt a seed buffer
+     * Encrypt a randomBytes(16) Entropy
+     * @param {Buffer = null} payload - The randomBytes(16) Entropy.
+     * @return {encryptedSeed, encryptedEntropy} A Object containing the encrypted seed/entropy and seed Buffer.
      */
-    deriveKeyFromPassKey(): Promise<Buffer>;
-    /**
-     * Encrypts a BIP39 mnemonic phrase.
-     * @param {Buffer} entropy.
-     * @return {Promise<{encryptedSeed, encryptedEntropy, seedBuffer}>} A Object containing the encrypted seed/entropy and seed Buffer.
-     */
-    encrypt(entropy: any): Promise<{
-        encryptedSeed: any;
-        encryptedEntropy: any;
-        seedBuffer: any;
-    }>;
+    generateAndEncrypt(payload?: any): Buffer;
     /**
      * Decrypts a payload to retrieve a BIP39 mnemonic phrase.
      * @param {Buffer} payload - The encrypted payload.
-     * @return {Promise<Buffer>} The decrypted mnemonic phrase.
+     * @return {Buffer} The decrypted mnemonic phrase.
      */
-    decrypt(payload: Buffer): Promise<Buffer>;
+    decrypt(payload: Buffer): Buffer;
     /**
      * Generates a random 128 bits buffer
      * @return {Buffer} Which can be converted BIP39 mnemonic phrase (12 words).

@@ -7,11 +7,12 @@ try {
     const wdkManager = new WdkSecretManager('1234', salt);
     const entropy = wdkManager.generateRandomBuffer();
     const entropyCopy = Buffer.from(entropy);
+    const seedBuffer = bip39.mnemonicToSeedSync(bip39.entropyToMnemonic(entropy))
     console.log('[entropy] ', entropy);
     const phrase = bip39.entropyToMnemonic(entropy);
     console.log('[phrase] ', phrase);
-    const encrypted = wdkManager.encrypt(entropy)
-    console.log('[encrypted phrase] ', encrypted);
+    const encrypted = wdkManager.generateAndEncrypt(entropy)
+    console.log('[encrypted] ', encrypted);
 
 
     const decryptedSeed = wdkManager.decrypt(encrypted.encryptedSeed);
@@ -21,7 +22,7 @@ try {
     console.log('[decryptedEntropy buffer] ', decryptedEntropy);
     const decryptedPhrase = wdkManager.entropyToMnemonic(decryptedEntropy)
     console.log('[decryptedMnemonicPhrase] ', decryptedPhrase);
-    if (decryptedSeed.equals(encrypted.seedBuffer)) {
+    if (decryptedSeed.equals(seedBuffer)) {
         console.log('Seed Decryption works!!!!');
     } else {
         console.log('Decryption doesn\'t works');

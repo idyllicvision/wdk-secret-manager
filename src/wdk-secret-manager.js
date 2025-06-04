@@ -50,7 +50,6 @@ export default class WdkSecretManager {
             this.#passKeyValidator(this.#passkey);
             this.#saltValidator(this.#salt);
             const key = Buffer.alloc(32); // 32 bytes for a 256-bit key
-            console.log(key)
             sodium.crypto_pwhash(
                 key,
                 Buffer.from(this.#passkey, 'utf-8'),
@@ -67,28 +66,32 @@ export default class WdkSecretManager {
     }
 
     /**
-     * Encrypts a BIP39 mnemonic phrase.
-     * @param {Buffer} entropy.
-     * @return {encryptedSeed, encryptedEntropy, seedBuffer} A Object containing the encrypted seed/entropy and seed Buffer.
+     * Generate randomBytes(16) Entropy
+     * Convert Entropy to BIP39 mnemonic phrase
+     * Convert BIP39 mnemonic phrase to seed buffer
+     * Encrypt a seed buffer
+     * Encrypt a randomBytes(16) Entropy
+     * @param {Buffer = null} payload - The randomBytes(16) Entropy.
+     * @return {encryptedSeed, encryptedEntropy} A Object containing the encrypted seed/entropy and seed Buffer.
      */
-    encrypt(entropy) {
-        if (!b4a.isBuffer(entropy)) throw new Error('Payload is not a buffer')
+    generateAndEncrypt(payload = null) {
+        if (!b4a.isBuffer(payload)) throw new Error('Payload is not a buffer')
+        const entropy = payload ? payload : this.generateRandomBuffer();
         const seedBuffer = bip39.mnemonicToSeedSync(bip39.entropyToMnemonic(entropy))
-        const cpSeedBuffer = Buffer.from(seedBuffer);
-        const encryptedSeed = this.#encryptor(seedBuffer, seedBuffer.byteLength);
 
-        const encryptedEntropy = this.#encryptor(entropy, entropy.byteLength);
+        const encryptedSeed = this.#encrypt(seedBuffer, seedBuffer.byteLength);
+        const encryptedEntropy = this.#encrypt(entropy, entropy.byteLength);
 
-        return {encryptedSeed, encryptedEntropy, ...{seedBuffer: cpSeedBuffer}};
+        return {encryptedSeed, encryptedEntropy};
     }
 
     /**
-     * Encrypts a BIP39 mnemonic phrase.
+     * Encrypt entropy or seed buffer
      * @param {Buffer} buffer.
      * @param {number} buffLength.
      * @return {Buffer} A Buffer containing the encrypted payload.
      */
-    #encryptor(buffer, buffLength) {
+    #encrypt(buffer, buffLength) {
         if (!b4a.isBuffer(buffer)) throw new Error('Payload is not a buffer')
         if (!buffLength) throw new Error('Incorrect buffer length');
         const key = this.#deriveKeyFromPassKey();
