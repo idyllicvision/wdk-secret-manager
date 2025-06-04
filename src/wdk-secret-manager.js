@@ -75,7 +75,7 @@ export default class WdkSecretManager {
      * @return {encryptedSeed, encryptedEntropy} A Object containing the encrypted seed/entropy and seed Buffer.
      */
     generateAndEncrypt(payload = null) {
-        if (!b4a.isBuffer(payload)) throw new Error('Payload is not a buffer')
+        if (payload) if (!b4a.isBuffer(payload)) throw new Error('Payload is not a buffer!')
         const entropy = payload ? payload : this.generateRandomBuffer();
         const seedBuffer = bip39.mnemonicToSeedSync(bip39.entropyToMnemonic(entropy))
 
@@ -92,7 +92,7 @@ export default class WdkSecretManager {
      * @return {Buffer} A Buffer containing the encrypted payload.
      */
     #encrypt(buffer, buffLength) {
-        if (!b4a.isBuffer(buffer)) throw new Error('Payload is not a buffer')
+        if (!b4a.isBuffer(buffer)) throw new Error('Payload is not a buffer!')
         if (!buffLength) throw new Error('Incorrect buffer length');
         const key = this.#deriveKeyFromPassKey();
 
@@ -122,7 +122,7 @@ export default class WdkSecretManager {
      */
     decrypt(payload) {
         if (!b4a.isBuffer(payload)) {
-            throw new Error('Payload is not a buffer')
+            throw new Error('Payload is not a buffer!')
         }
         const minLength = 1 + sodium.crypto_secretbox_NONCEBYTES + 1 + sodium.crypto_secretbox_MACBYTES;
         if (payload.byteLength < minLength) {
@@ -169,7 +169,7 @@ export default class WdkSecretManager {
      * @return {string} - BIP39 mnemonic phrase (12 words by default for 128 bits).
      */
     entropyToMnemonic(entropy) {
-        if (!b4a.isBuffer(entropy)) throw new Error('Payload is not a buffer')
+        if (!b4a.isBuffer(entropy)) throw new Error('Payload is not a buffer!')
         return bip39.entropyToMnemonic(entropy);
     }
 
