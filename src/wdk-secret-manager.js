@@ -1,4 +1,3 @@
-import crypto from 'crypto';
 import b4a from 'b4a';
 import bip39 from 'bip39';
 import sodium from 'sodium-universal'
@@ -8,7 +7,11 @@ import sodium from 'sodium-universal'
  * @type {{generate: (function(): Buffer)}}
  */
 export const wdkSaltGenerator = {
-    generate: () => crypto.randomBytes(16)
+    generate: () => {
+        const secureBuffer = sodium.sodium_malloc(16);
+        sodium.randombytes_buf(secureBuffer);
+        return secureBuffer;
+    }
 };
 
 export default class WdkSecretManager {
@@ -152,7 +155,10 @@ export default class WdkSecretManager {
             throw new Error('Invalid decrypted payload: inconsistent length');
         }
 
-        return plain.subarray(1, 1 + bytes)
+        const secureSeedBuffer = sodium.sodium_malloc(bytes);
+        plain.subarray(1, 1 + bytes).copy(secureSeedBuffer)
+        sodium.sodium_memzero(plain.subarray(1, 1 + bytes));
+        return secureSeedBuffer
     }
 
     /**
@@ -160,7 +166,9 @@ export default class WdkSecretManager {
      * @return {Buffer} Which can be converted BIP39 mnemonic phrase (12 words).
      */
     generateRandomBuffer() {
-        return crypto.randomBytes(16);
+        const secureBuffer = sodium.sodium_malloc(16);
+        sodium.randombytes_buf(secureBuffer);
+        return secureBuffer;
     }
 
     /**
@@ -196,9 +204,13 @@ export default class WdkSecretManager {
 
     /**
      *
-     * Clean up variables.
+     * @param decryptedSeedBuffer
+     * @param decryptedEntropy
      */
-    destructor() {
+    destructor(decryptedSeedBuffer, decryptedEntropy) {
+        sodium.sodium_free(decryptedSeedBuffer);
+        sodium.sodium_free(decryptedEntropy);
+        sodium.sodium_free(this.#salt);
         this.#passkey = null;
         this.#salt = null;
     }

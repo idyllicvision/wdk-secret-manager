@@ -1,6 +1,6 @@
 import WdkSecretManager, {wdkSaltGenerator} from "../index.js";
-import crypto from 'crypto';
 import bip39 from "bip39";
+import sodium from "sodium-universal";
 /**
  * @jest-environment node
  */
@@ -14,6 +14,15 @@ describe('wdkSaltGenerator', () => {
 });
 
 describe('WdkSecretManager', () => {
+    let randomBufferGenerator = null;
+    beforeEach(() => {
+        randomBufferGenerator = (length) => {
+            const secureBuffer = sodium.sodium_malloc(length);
+            sodium.randombytes_buf(secureBuffer);
+            return secureBuffer;
+        }
+    });
+
     const passKey = 'my-super-secret-password-123';
     const salt = wdkSaltGenerator.generate();
     const knownEntropy = Buffer.from('9f8c7e3d6a2b4c1e0f3a9d5c6b7e2a1f', 'hex');
@@ -40,7 +49,7 @@ describe('WdkSecretManager', () => {
         });
 
         it('should create an instance with a salt smaller than 16 bytes and throw error', () => {
-            const shortSalt = crypto.randomBytes(12);
+            const shortSalt = randomBufferGenerator(12);
             expect(() => new WdkSecretManager(passKey, shortSalt)).toThrow('Salt must be at least 16 bytes!');
         });
     })
@@ -72,7 +81,7 @@ describe('WdkSecretManager', () => {
             const cpEntropy = Buffer.from(entropy);
             const { encryptedEntropy } = manager.generateAndEncrypt(entropy);
             const decryptedEntropy = manager.decrypt(encryptedEntropy);
-            expect(decryptedEntropy).toEqual(cpEntropy);
+            expect(decryptedEntropy.equals(cpEntropy)).toBe(true);
         });
         it('should correctly generate, encrypt, and then decrypt a seed buffer', () => {
             const manager = new WdkSecretManager(passKey, salt);
@@ -84,7 +93,7 @@ describe('WdkSecretManager', () => {
             // The decrypted seed should be 64 bytes long for a 128-bit entropy
             expect(decryptedSeed).toBeInstanceOf(Buffer);
             expect(decryptedSeed.length).toBe(64);
-            expect(decryptedSeed).toEqual(localSeed);
+            expect(decryptedSeed.equals(localSeed)).toBe(true);
         });
 
         it('should successfully encrypt/decrypt entropy when no payload is provided', () => {
@@ -132,7 +141,7 @@ describe('WdkSecretManager', () => {
         });
 
         it('should throw an error if trying to decrypt with the wrong salt', () => {
-            const wrongSalt = crypto.randomBytes(16);
+            const wrongSalt = randomBufferGenerator(16);
             const wrongManager = new WdkSecretManager(passKey, wrongSalt);
             expect(() => wrongManager.decrypt(encryptedEntropy)).toThrow('Decryption failed');
         });

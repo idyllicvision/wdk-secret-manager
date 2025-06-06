@@ -14,11 +14,9 @@ The library provides functionalities to:
 ## Dependencies
 
 This library relies on the following external modules:
-- `crypto`: For generating random bytes (e.g., for salt).
 - `b4a`: Buffer-to-array and array-to-buffer conversions.
-- `pwhash`: For key derivation using the pwhash algorithm.
 - `bip39`: For mnemonic phrase generation and entropy conversion.
-- `sodium-universal`: For cryptographic operations (encryption/decryption).
+- `sodium-universal`: For cryptographic operations (memory allocation/random data generation/encryption/decryption).
 
 ## Security Notes
 - Passkey Strength: The security of the encrypted data heavily depends on the strength of the passKey. Encourage users to choose strong, unique passkeys.
