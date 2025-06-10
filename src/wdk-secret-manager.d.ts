@@ -43,8 +43,9 @@ export default class WdkSecretManager {
     entropyToMnemonic(entropy: Buffer): string;
     /**
      *
-     * Clean up variables.
+     * @param decryptedSeedBuffer
+     * @param decryptedEntropy
      */
-    destructor(): void;
+    destructor(decryptedSeedBuffer: any, decryptedEntropy: any): void;
     #private;
 }
