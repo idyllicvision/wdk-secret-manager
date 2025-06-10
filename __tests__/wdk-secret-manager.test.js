@@ -1,6 +1,7 @@
 import WdkSecretManager, {wdkSaltGenerator} from "../index.js";
 import bip39 from "bip39";
-import sodium from "sodium-universal";
+import sodium from "sodium-react-native-direct";
+import {Buffer} from "buffer";
 /**
  * @jest-environment node
  */
