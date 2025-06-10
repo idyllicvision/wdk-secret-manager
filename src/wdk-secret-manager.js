@@ -1,6 +1,7 @@
 import b4a from 'b4a';
-import bip39 from 'bip39';
-import sodium from 'sodium-universal'
+import * as bip39 from 'bip39';
+import sodium from "sodium-react-native-direct";
+import { Buffer } from 'buffer';
 
 /**
  *
@@ -98,7 +99,6 @@ export default class WdkSecretManager {
         if (!b4a.isBuffer(buffer)) throw new Error('Payload is not a buffer!')
         if (!buffLength) throw new Error('Incorrect buffer length');
         const key = this.#deriveKeyFromPassKey();
-
         if (buffer.byteLength > 64 || buffer.byteLength < 16) throw new Error('Buffer size must be between 16 and 64')
 
         const payload = b4a.alloc(1 + sodium.crypto_secretbox_NONCEBYTES + 1 + buffLength + sodium.crypto_secretbox_MACBYTES)
@@ -137,15 +137,12 @@ export default class WdkSecretManager {
             throw new Error('Invalid version')
         }
         const key = this.#deriveKeyFromPassKey();
-
         const nonce = payload.subarray(1, 1 + sodium.crypto_secretbox_NONCEBYTES)
         const cipher = payload.subarray(1 + nonce.byteLength)
-        const plain = cipher.subarray(0, cipher.byteLength - sodium.crypto_secretbox_MACBYTES)
 
-        if (!sodium.crypto_secretbox_open_easy(plain, cipher, nonce, key)) {
-            throw new Error('Decryption failed')
-        }
+        const plain = b4a.alloc(cipher.byteLength - sodium.crypto_secretbox_MACBYTES);
 
+        sodium.crypto_secretbox_open_easy(plain, cipher, nonce, key);
         const bytes = plain[0]
         if (bytes > 64) {
             throw new Error('Invalid decrypted payload')
@@ -154,9 +151,8 @@ export default class WdkSecretManager {
         if (plain.byteLength < 1 + bytes) {
             throw new Error('Invalid decrypted payload: inconsistent length');
         }
-
         const secureSeedBuffer = sodium.sodium_malloc(bytes);
-        plain.subarray(1, 1 + bytes).copy(secureSeedBuffer)
+        secureSeedBuffer.set(plain.subarray(1, 1 + bytes))
         sodium.sodium_memzero(plain.subarray(1, 1 + bytes));
         return secureSeedBuffer
     }
@@ -194,9 +190,9 @@ export default class WdkSecretManager {
         if (!salt) {
             throw new Error('Salt must not be empty!');
         }
-        if (!Buffer.isBuffer(salt)) {
-            throw new Error('Salt must be a buffer!');
-        }
+        // if (!Buffer.isBuffer(salt)) {
+        //     throw new Error('Salt must be a buffer!');
+        // }
         if (salt.byteLength < 16) {
             throw new Error('Salt must be at least 16 bytes!');
         }
