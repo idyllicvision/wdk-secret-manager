@@ -42,10 +42,13 @@ const mnemonicPhrase = wdkManager.entropyToMnemonic(decryptedEntropy);
 ```
 
 ## Installation
+### IOS
 - After module installation.
-- If you are using `expo` to run react native app, go to your React native application `ios` directory, open `Podfile` and after this line `config = use_native_modules!(config_command)` add this.
+- To install libsodium dependencies, if you are using `expo` to run react native app, go to your React native application `ios` directory, open `Podfile` and after this line `config = use_native_modules!(config_command)` add this.
 ```flow js
 pod 'sodium-react-native-direct', :path => '../node_modules/sodium-react-native-direct'
 ```
 - run `pod install` command
 - If you are not using `expo`, just run `pod install` from your RN application `ios` directory.
+### Android
+- To install libsodium dependencies for Android, we are using `android/build.grable` file. `Important!! This file is not tested yet`
