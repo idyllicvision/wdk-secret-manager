@@ -190,9 +190,9 @@ export default class WdkSecretManager {
         if (!salt) {
             throw new Error('Salt must not be empty!');
         }
-        // if (!Buffer.isBuffer(salt)) {
-        //     throw new Error('Salt must be a buffer!');
-        // }
+        if (!Buffer.isBuffer(salt)) {
+            throw new Error('Salt must be a buffer!');
+        }
         if (salt.byteLength < 16) {
             throw new Error('Salt must be at least 16 bytes!');
         }
