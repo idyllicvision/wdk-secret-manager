@@ -10,7 +10,7 @@
   "homepage": "https://github.com/noxtton/wdk-secret-manager-internal.git",
   "author": "Tether",
   "license": "ISC",
-  "description": "",
+  "description": "Works with mnemonic and seed buffer",
   "dependencies": {
     "b4a": "^1.6.7",
     "bip39": "^3.1.0",
