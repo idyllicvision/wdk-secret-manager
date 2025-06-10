@@ -40,3 +40,12 @@ const decryptedEntropy = wdkManager.decrypt(encrypted.encryptedEntropy);
 
 const mnemonicPhrase = wdkManager.entropyToMnemonic(decryptedEntropy);
 ```
+
+## Installation
+- After module installation.
+- If you are using `expo` to run react native app, go to your React native application `ios` directory, open `Podfile` and after this line `config = use_native_modules!(config_command)` add this.
+```flow js
+pod 'sodium-react-native-direct', :path => '../node_modules/sodium-react-native-direct'
+```
+- run `pod install` command
+- If you are not using `expo`, just run `pod install` from your RN application `ios` directory.
