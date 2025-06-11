@@ -157,10 +157,10 @@ export default class WdkSecretManager {
         if (is_all_zeros) {
             throw new Error('Decryption failed!');
         }
-        const secureSeedBuffer = sodium.sodium_malloc(bytes);
-        secureSeedBuffer.set(plain.subarray(1, 1 + bytes))
-        sodium.sodium_memzero(plain.subarray(1, 1 + bytes));
-        return secureSeedBuffer
+        const secureBuffer = sodium.sodium_malloc(bytes);
+        secureBuffer.set(plain.subarray(1, 1 + bytes))
+        sodium.sodium_free(plain)
+        return secureBuffer
     }
 
     /**
