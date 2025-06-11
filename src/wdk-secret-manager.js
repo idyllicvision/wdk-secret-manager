@@ -140,7 +140,7 @@ export default class WdkSecretManager {
         const nonce = payload.subarray(1, 1 + sodium.crypto_secretbox_NONCEBYTES)
         const cipher = payload.subarray(1 + nonce.byteLength)
 
-        const plain = b4a.alloc(cipher.byteLength - sodium.crypto_secretbox_MACBYTES);
+        const plain = sodium.sodium_malloc(cipher.byteLength - sodium.crypto_secretbox_MACBYTES);
 
         sodium.crypto_secretbox_open_easy(plain, cipher, nonce, key);
         const bytes = plain[0]
@@ -150,6 +150,12 @@ export default class WdkSecretManager {
 
         if (plain.byteLength < 1 + bytes) {
             throw new Error('Invalid decrypted payload: inconsistent length');
+        }
+        //If decryption failed, the plain will be filled entirely with zeros [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        //Check each element.
+        const is_all_zeros = plain.every(element => element === 0);
+        if (is_all_zeros) {
+            throw new Error('Decryption failed!');
         }
         const secureSeedBuffer = sodium.sodium_malloc(bytes);
         secureSeedBuffer.set(plain.subarray(1, 1 + bytes))
@@ -190,7 +196,7 @@ export default class WdkSecretManager {
         if (!salt) {
             throw new Error('Salt must not be empty!');
         }
-        if (!Buffer.isBuffer(salt)) {
+        if (!b4a.isBuffer(salt)) {
             throw new Error('Salt must be a buffer!');
         }
         if (salt.byteLength < 16) {
