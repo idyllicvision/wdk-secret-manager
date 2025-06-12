@@ -20,10 +20,13 @@ export default class WdkSecretManager {
      * Convert BIP39 mnemonic phrase to seed buffer
      * Encrypt a seed buffer
      * Encrypt a randomBytes(16) Entropy
-     * @param {Buffer = null} payload - The randomBytes(16) Entropy.
-     * @return {encryptedSeed, encryptedEntropy} A Object containing the encrypted seed/entropy and seed Buffer.
+     * @param {Buffer} [payload=null] - Optional randomBytes(16) entropy. If not provided, it will be generated.
+     * @returns {{encryptedSeed: Buffer, encryptedEntropy: Buffer}} A Object containing the encrypted seed and entropy.
      */
-    generateAndEncrypt(payload?: any): Buffer;
+    generateAndEncrypt(payload?: Buffer): {
+        encryptedSeed: Buffer;
+        encryptedEntropy: Buffer;
+    };
     /**
      * Decrypts a payload to retrieve a BIP39 mnemonic phrase.
      * @param {Buffer} payload - The encrypted payload.
