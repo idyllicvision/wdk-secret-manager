@@ -10,9 +10,9 @@ import CryptoJS from 'crypto-js';
  */
 export const wdkSaltGenerator = {
   generate: () => {
-    const secureBuffer = sodium.sodium_malloc(16);
-    sodium.randombytes_buf(secureBuffer);
-    return secureBuffer;
+    const resultBuffer = b4a.alloc(16);
+    sodium.randombytes_buf(resultBuffer);
+    return resultBuffer;
   },
 };
 
@@ -55,7 +55,7 @@ export default class WdkSecretManager {
 
     const key = CryptoJS.PBKDF2(this.#passkey, CryptoJS.enc.Hex.parse(this.#salt.toString('hex')), {
       keySize: 256 / 32, // 256-bit = 32 bytes
-      iterations: 50000,
+      iterations: 5000,
       hasher: CryptoJS.algo.SHA256,
     });
 
@@ -135,7 +135,7 @@ export default class WdkSecretManager {
     const nonce = payload.subarray(1, 1 + sodium.crypto_secretbox_NONCEBYTES);
     const cipher = payload.subarray(1 + nonce.byteLength);
 
-    const plain = sodium.sodium_malloc(cipher.byteLength - sodium.crypto_secretbox_MACBYTES);
+    const plain = b4a.alloc(cipher.byteLength - sodium.crypto_secretbox_MACBYTES);
     if (!sodium.crypto_secretbox_open_easy(plain, cipher, nonce, key)) {
       throw new Error('Decryption failed');
     }
@@ -147,10 +147,10 @@ export default class WdkSecretManager {
     if (plain.byteLength < 1 + bytes) {
       throw new Error('Invalid decrypted payload: inconsistent length');
     }
-    const secureBuffer = sodium.sodium_malloc(bytes);
-    secureBuffer.set(plain.subarray(1, 1 + bytes));
+    const resultBuffer = b4a.alloc(bytes);
+    resultBuffer.set(plain.subarray(1, 1 + bytes));
     sodium.sodium_memzero(plain);
-    return secureBuffer;
+    return resultBuffer;
   }
 
   /**
@@ -158,9 +158,9 @@ export default class WdkSecretManager {
    * @return {Buffer} Which can be converted BIP39 mnemonic phrase (12 words).
    */
   generateRandomBuffer() {
-    const secureBuffer = sodium.sodium_malloc(16);
-    sodium.randombytes_buf(secureBuffer);
-    return secureBuffer;
+    const resultBuffer = b4a.alloc(16);
+    sodium.randombytes_buf(resultBuffer);
+    return resultBuffer;
   }
 
   /**
