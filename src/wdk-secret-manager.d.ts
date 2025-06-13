@@ -15,34 +15,40 @@ export default class WdkSecretManager {
      */
     constructor(passKey: string, salt?: Buffer);
     /**
-     * Derives a strong, 32-byte (256-bit) cryptographic key from a user's password
-     * Salt for preventing rainbow table attacks.
-     * using the Argon2id algorithm.
-     * @return {Promise<Buffer>}
+     * Generate randomBytes(16) Entropy
+     * Convert Entropy to BIP39 mnemonic phrase
+     * Convert BIP39 mnemonic phrase to seed buffer
+     * Encrypt a seed buffer
+     * Encrypt a randomBytes(16) Entropy
+     * @param {Buffer} [payload=null] - Optional randomBytes(16) entropy. If not provided, it will be generated.
+     * @returns {{encryptedSeed: Buffer, encryptedEntropy: Buffer}} A Object containing the encrypted seed and entropy.
      */
-    deriveKeyFromPassKey(): Promise<Buffer>;
-    /**
-     * Encrypts a BIP39 mnemonic phrase.
-     * @param {string} phrase - The mnemonic phrase to encrypt.
-     * @return {Promise<Buffer>} A Buffer containing the encrypted payload.
-     */
-    encrypt(phrase: string): Promise<Buffer>;
+    generateAndEncrypt(payload?: Buffer): {
+        encryptedSeed: Buffer;
+        encryptedEntropy: Buffer;
+    };
     /**
      * Decrypts a payload to retrieve a BIP39 mnemonic phrase.
      * @param {Buffer} payload - The encrypted payload.
-     * @return {Promise<string>} The decrypted mnemonic phrase.
+     * @return {Buffer} The decrypted mnemonic phrase.
      */
-    decrypt(payload: Buffer): Promise<string>;
+    decrypt(payload: Buffer): Buffer;
     /**
-     * Generates a random BIP39 mnemonic phrase (12 words by default for 128 bits).
-     * @param {number} [strength=128] - The desired bit strength for the mnemonic.
-     * @return {string} A string containing the random words.
+     * Generates a random 128 bits buffer
+     * @return {Buffer} Which can be converted BIP39 mnemonic phrase (12 words).
      */
-    generateRandomSeed(strength?: number): string;
+    generateRandomBuffer(): Buffer;
     /**
      *
-     * Clean up variables.
+     * @param {Buffer} entropy - 128 bits entropy buffer.
+     * @return {string} - BIP39 mnemonic phrase (12 words by default for 128 bits).
      */
-    destructor(): void;
+    entropyToMnemonic(entropy: Buffer): string;
+    /**
+     *
+     * @param decryptedSeedBuffer
+     * @param decryptedEntropy
+     */
+    destructor(decryptedSeedBuffer: any, decryptedEntropy: any): void;
     #private;
 }
