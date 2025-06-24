@@ -23,7 +23,7 @@ This library relies on the following external modules:
 
 - Salt Management: The salt is not secret but must be unique per passkey. It should be stored alongside the encrypted data. Reusing salts across different passkeys or for different users is insecure.
 
-- Key Derivation Parameters: The pwhash parameters (256-bit key, passkey, salt, ) are set to reasonable defaults.
+- Key Derivation Parameters: The pbkdf2 parameters (256-bit key, passkey, salt, ) are set to reasonable defaults.
 
 ## Example
 
@@ -32,11 +32,11 @@ const salt = wdkSaltGenerator.generate()
 const passkey = '1234'
 const wdkManager = new WdkSecretManager(passkey, salt);
 
-const encrypted = wdkManager.generateAndEncrypt();
+const { encryptedSeed, encryptedEntropy } = wdkManager.generateAndEncrypt();
 
-const decryptedSeed = wdkManager.decrypt(encrypted.encryptedSeed);
+const decryptedSeed = wdkManager.decrypt(encryptedSeed);
 
-const decryptedEntropy = wdkManager.decrypt(encrypted.encryptedEntropy);
+const decryptedEntropy = wdkManager.decrypt(encryptedEntropy);
 
 const mnemonicPhrase = wdkManager.entropyToMnemonic(decryptedEntropy);
 ```
