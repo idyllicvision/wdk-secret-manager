@@ -109,19 +109,21 @@ export default class WdkSecretManager {
     if (buffer.byteLength > 64 || buffer.byteLength < 16)
       throw new Error('Buffer size must be between 16 and 64');
 
+    const nonce = b4a.alloc(sodium.crypto_secretbox_NONCEBYTES);
+    sodium.randombytes_buf(nonce);
+
     const payload = b4a.alloc(
       1 + sodium.crypto_secretbox_NONCEBYTES + 1 + buffLength + sodium.crypto_secretbox_MACBYTES,
     );
     payload[0] = 0; // version
+    payload.set(nonce, 1);
 
-    const nonce = payload.subarray(1, 1 + sodium.crypto_secretbox_NONCEBYTES);
     const cipher = payload.subarray(1 + nonce.byteLength);
     const plain = cipher.subarray(0, cipher.byteLength - sodium.crypto_secretbox_MACBYTES);
     plain[0] = buffer.byteLength;
     plain.set(buffer, 1);
 
     sodium.sodium_memzero(buffer);
-    sodium.randombytes_buf(nonce);
     // encrypt in-place
     sodium.crypto_secretbox_easy(cipher, plain, nonce, key);
 
