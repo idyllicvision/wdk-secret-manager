@@ -2,7 +2,7 @@ import b4a from 'b4a';
 import * as bip39 from 'bip39';
 import sodium from 'sodium-universal';
 import { Buffer } from 'buffer';
-import { pbkdf2Sync } from 'react-native-quick-crypto';
+import { pbkdf2Sync } from 'crypto';
 
 /**
  *
