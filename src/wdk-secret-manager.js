@@ -221,16 +221,11 @@ export default class WdkSecretManager {
   }
 
   /**
-   *
-   * @param decryptedSeedBuffer
-   * @param decryptedEntropy
+   * Erase the salt and passkey from memory.
    */
-  destructor(decryptedSeedBuffer, decryptedEntropy) {
-    if (decryptedSeedBuffer) sodium.sodium_memzero(decryptedSeedBuffer);
-    if (decryptedEntropy) sodium.sodium_memzero(decryptedEntropy);
+  dispose() {
     sodium.sodium_memzero(this.#salt);
-    decryptedSeedBuffer = null;
-    decryptedEntropy = null;
+    if (b4a.isBuffer(this.#passkey)) sodium.sodium_memzero(this.#passkey);
     this.#passkey = null;
     this.#salt = null;
   }

@@ -53,10 +53,8 @@ export default class WdkSecretManager {
      */
     mnemonicToEntropy(seedPhrase: string): Buffer;
     /**
-     *
-     * @param decryptedSeedBuffer
-     * @param decryptedEntropy
+     * Erase the salt and passkey from memory.
      */
-    destructor(decryptedSeedBuffer: any, decryptedEntropy: any): void;
+    dispose(): void;
     #private;
 }
