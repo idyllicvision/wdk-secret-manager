@@ -1,14 +1,13 @@
-import b4a from 'b4a';
-import * as bip39 from 'bip39';
-import sodium from 'sodium-universal';
-import { Buffer } from 'buffer';
-import { pbkdf2Sync } from 'crypto';
+const b4a = require('b4a');
+const bip39 = require('bip39-mnemonic');
+const sodium = require('sodium-native');
+const bareCrypto = require('bare-crypto');
 
 /**
  *
  * @type {{generate: (function(): Buffer)}}
  */
-export const wdkSaltGenerator = {
+const wdkSaltGenerator = {
   generate: () => {
     const resultBuffer = b4a.alloc(16);
     sodium.randombytes_buf(resultBuffer);
@@ -16,7 +15,7 @@ export const wdkSaltGenerator = {
   },
 };
 
-export default class WdkSecretManager {
+class WdkSecretManager {
   /**
    *
    * @param {Buffer | ArrayBuffer | string} passKey - The user's password (e.g., "password123").
@@ -62,7 +61,7 @@ export default class WdkSecretManager {
     // The digest algorithm
     const digest = 'sha256';
 
-    const key = pbkdf2Sync(
+    const key = bareCrypto.pbkdf2Sync(
       this.#passkey,
       this.#salt,
       iterations,
@@ -83,10 +82,10 @@ export default class WdkSecretManager {
    * @param {Buffer} [derivedKey=null] - Optional ArrayBuffer(32) bytes cryptographic key.
    * @returns {{encryptedSeed: Buffer, encryptedEntropy: Buffer}} A Object containing the encrypted seed and entropy.
    */
-  generateAndEncrypt(payload = null, derivedKey = null) {
+  async generateAndEncrypt(payload = null, derivedKey = null) {
     if (payload) if (!b4a.isBuffer(payload)) throw new Error('Payload is not a buffer!');
     const entropy = payload ? payload : this.generateRandomBuffer();
-    const seedBuffer = bip39.mnemonicToSeedSync(bip39.entropyToMnemonic(entropy));
+    const seedBuffer = await bip39.mnemonicToSeed(bip39.entropyToMnemonic(entropy));
 
     const encryptedSeed = this.#encrypt(seedBuffer, seedBuffer.byteLength, derivedKey);
     const encryptedEntropy = this.#encrypt(entropy, entropy.byteLength, derivedKey);
@@ -232,3 +231,5 @@ export default class WdkSecretManager {
     this.#salt = null;
   }
 }
+
+module.exports = {wdkSaltGenerator, WdkSecretManager}
