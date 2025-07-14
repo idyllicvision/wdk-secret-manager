@@ -1,3 +1,2 @@
-import wdkSaltGenerator = require("./src/wdk-secret-manager.js");
-import WdkSecretManager = require("./src/wdk-secret-manager.js");
-export { wdkSaltGenerator, WdkSecretManager };
+declare const _exports: typeof import("./src/wdk-secret-manager");
+export = _exports;

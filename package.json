@@ -2,7 +2,6 @@
   "name": "@wdk/wdk-secret-manager",
   "version": "1.0.0",
   "main": "index.js",
-  "type": "module",
   "scripts": {
     "build:types": "rimraf *.d.ts **/*.d.ts; tsc",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
