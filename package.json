@@ -1,0 +1,33 @@
+{
+  "name": "@wdk/wdk-secret-manager",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "build:types": "rimraf *.d.ts **/*.d.ts; tsc",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
+  },
+  "homepage": "https://github.com/noxtton/wdk-secret-manager-internal.git",
+  "author": "Tether",
+  "license": "ISC",
+  "description": "Works with mnemonic and seed buffer",
+  "dependencies": {
+    "b4a": "^1.6.7",
+    "bare-crypto": "^1.7.0",
+    "bare-stream": "^2.6.5",
+    "bip39": "^3.1.0",
+    "bip39-mnemonic": "^2.5.0",
+    "buffer": "^6.0.3",
+    "events": "^3.3.0",
+    "rimraf": "^5.0.10",
+    "sodium-javascript": "^0.8.0",
+    "sodium-native": "^5.0.6",
+    "sodium-universal": "^5.0.1",
+    "typescript": "^5.8.3"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "jest": {
+    "transform": {}
+  }
+}
