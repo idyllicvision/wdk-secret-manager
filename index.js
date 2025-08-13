@@ -1,1 +1,3 @@
-module.exports = require('./src/wdk-secret-manager');
+'use strict'
+
+export { default } from './src/wdk-secret-manager.js'
