@@ -5,7 +5,7 @@
 export const wdkSaltGenerator: {
     generate: (() => Buffer);
 };
-export default class WdkSecretManager {
+export class WdkSecretManager {
     /**
      *
      * @param {Buffer | ArrayBuffer | Uint8Array | string} passKey - The user's password (e.g., "password123").

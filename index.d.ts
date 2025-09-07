@@ -1,1 +1,2 @@
-export { default, wdkSaltGenerator } from "./src/wdk-secret-manager.js";
+declare const _exports: typeof import("./src/wdk-secret-manager");
+export = _exports;
