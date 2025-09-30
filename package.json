@@ -13,8 +13,8 @@
   },
   "homepage": "https://github.com/tetherto/wdk-secret-manager.git",
   "dependencies": {
+    "bare-wdk-runtime": "2.0.0",
     "b4a": "1.6.7",
-    "bare-crypto": "1.7.0",
     "bip39-mnemonic": "2.5.0",
     "sodium-native": "5.0.6"
   },
@@ -23,5 +23,21 @@
     "rimraf": "6.0.1",
     "standard": "17.1.2",
     "typescript": "5.8.3"
+  },
+  "exports": {
+    ".": {
+      "types": "./types/wdk-secret-manager.d.ts",
+      "bare": "./bare.js",
+      "default": "./index.js"
+    },
+    "./package": {
+      "default": "./package.json"
+    }
+  },
+  "standard": {
+    "ignore": [
+      "bare.js",
+      "tests/**/*.js"
+    ]
   }
 }

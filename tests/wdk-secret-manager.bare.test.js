@@ -6,7 +6,7 @@ import sodium from 'sodium-native'
 import bareCrypto from 'bare-crypto'
 import bip39 from 'bip39-mnemonic'
 
-import WdkSecretManager from '../index.js'
+import WdkSecretManager from '../bare.js'
 
 const rand = (n) => { const out = b4a.alloc(n); sodium.randombytes_buf(out); return out }
 const eq = (a, b) => b4a.compare(b4a.from(a), b4a.from(b)) === 0
