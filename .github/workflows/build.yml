@@ -23,7 +23,7 @@ jobs:
           always-auth: false
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Lint code with standard
         run: npm run lint

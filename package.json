@@ -35,7 +35,7 @@
     "test:coverage": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --coverage",
     "test:integration": "cross-env NODE_OPTIONS=--experimental-vm-modules jest tests/integration",
     "test:integration:coverage": "cross-env NODE_OPTIONS=--experimental-vm-modules jest tests/integration --coverage",
-    "test:bare": "bare tests/bare-runtime.test.mjs"
+    "test:bare": "npx --no-install bare tests/bare-runtime.test.mjs"
   },
   "homepage": "https://github.com/tetherto/wdk-secret-manager.git",
   "dependencies": {
