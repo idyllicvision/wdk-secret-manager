@@ -35,4 +35,4 @@ jobs:
         run: npm run test:integration
 
       - name: Run bare runtime test
-        run: npm run test:bare
+        run: npx test:bare
