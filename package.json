@@ -2,6 +2,17 @@
   "name": "@tetherto/wdk-secret-manager",
   "version": "1.0.0-beta.1",
   "description": "A package to encrypt mnemonic and seed buffer",
+  "keywords": [
+    "tetherto",
+    "wdk",
+    "wallet",
+    "encryption",
+    "ethereum",
+    "bitcoin",
+    "blockchain",
+    "secret",
+    "manager"
+  ],
   "author": "Tether",
   "license": "Apache-2.0",
   "repository": {
@@ -36,7 +47,7 @@
   "devDependencies": {
     "brittle": "3.19.0",
     "cross-env": "10.1.0",
-    "bare": "^1.22.0",
+    "bare": "1.22.2",
     "jest": "30.2.0",
     "standard": "17.1.2",
     "typescript": "5.9.3"
