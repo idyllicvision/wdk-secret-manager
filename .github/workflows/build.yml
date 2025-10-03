@@ -25,6 +25,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install bare
+        run: npm install -g bare
+
       - name: Lint code with standard
         run: npm run lint
 
