@@ -3,7 +3,7 @@
 import b4a from 'b4a'
 import bip39 from 'bip39-mnemonic'
 import sodium from 'sodium-native'
-import { pbkdf2Sync } from 'crypto';
+import { pbkdf2Sync } from 'crypto'
 
 const VERSION = 2 // PBKDF2 payloads
 
@@ -108,8 +108,8 @@ export default class WdkSecretManager {
    * @returns {Buffer} Encrypted payload with header
    */
   encrypt (data, masterKeyOpt = null) {
-    this._validatePassKey(this._passkey);
-    this._validateSalt(this._salt);
+    this._validatePassKey(this._passkey)
+    this._validateSalt(this._salt)
     if (!b4a.isBuffer(data)) throw new Error('Data must be a Buffer')
     const len = data.byteLength
     if (len < MIN_PLAINTEXT || len > MAX_PLAINTEXT) {
@@ -153,8 +153,8 @@ export default class WdkSecretManager {
    * @returns {Buffer} The decrypted plaintext data
    */
   decrypt (payload, masterKeyOpt = null) {
-    this._validatePassKey(this._passkey);
-    this._validateSalt(this._salt);
+    this._validatePassKey(this._passkey)
+    this._validateSalt(this._salt)
     if (!b4a.isBuffer(payload)) throw new Error('Payload must be a Buffer')
     if (payload.byteLength < HEADER_BYTES + 1 + MAC_BYTES) {
       throw new Error('Invalid payload: too short')
