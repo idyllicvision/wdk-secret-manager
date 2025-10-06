@@ -1,38 +1,74 @@
 {
-  "name": "@wdk/wdk-secret-manager",
-  "version": "1.0.0",
-  "description": "Works with mnemonic and seed buffer",
+  "name": "@tetherto/wdk-secret-manager",
+  "version": "1.0.0-beta.1",
+  "description": "A package to encrypt mnemonic and seed buffer",
+  "keywords": [
+    "tetherto",
+    "wdk",
+    "wallet",
+    "encryption",
+    "ethereum",
+    "bitcoin",
+    "blockchain",
+    "secret",
+    "manager"
+  ],
+  "author": "Tether",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/tetherto/wdk-secret-manager.git"
+  },
   "main": "index.js",
   "type": "module",
   "types": "./types",
+  "packageManager": "npm",
+  "engines": {
+    "node": ">=18",
+    "npm": ">=11"
+  },
   "scripts": {
-    "build:types": "rimraf *.d.ts **/*.d.ts; tsc",
+    "build:types": "tsc",
     "lint": "standard",
     "lint:fix": "standard --fix",
-    "test:bare": "bare tests/wdk-secret-manager.bare.test.js"
+    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
+    "test:coverage": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --coverage",
+    "test:integration": "cross-env NODE_OPTIONS=--experimental-vm-modules jest tests/integration",
+    "test:integration:coverage": "cross-env NODE_OPTIONS=--experimental-vm-modules jest tests/integration --coverage",
+    "test:bare": "bare tests/bare-runtime.test.mjs"
   },
   "homepage": "https://github.com/tetherto/wdk-secret-manager.git",
   "dependencies": {
-    "bare-wdk-runtime": "2.0.0",
-    "b4a": "1.6.7",
+    "bare-wdk-runtime": "2.0.1",
+    "b4a": "1.7.3",
     "bip39-mnemonic": "2.5.0",
-    "sodium-native": "5.0.6"
+    "sodium-native": "5.0.9"
   },
   "devDependencies": {
-    "brittle": "3.3.0",
-    "rimraf": "6.0.1",
+    "brittle": "3.19.0",
+    "cross-env": "10.1.0",
+    "jest": "30.2.0",
     "standard": "17.1.2",
-    "typescript": "5.8.3"
+    "typescript": "5.9.3"
   },
   "exports": {
     ".": {
-      "types": "./types/wdk-secret-manager.d.ts",
+      "types": "./types/index.d.ts",
       "bare": "./bare.js",
       "default": "./index.js"
     },
     "./package": {
       "default": "./package.json"
     }
+  },
+  "jest": {
+    "testPathIgnorePatterns": [
+      "/tests/bare-runtime.test.mjs$"
+    ]
+  },
+  "publishConfig": {
+    "access": "restricted",
+    "registry": "https://registry.npmjs.org/"
   },
   "standard": {
     "ignore": [
