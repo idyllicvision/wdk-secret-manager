@@ -1,5 +1,5 @@
 {
-  "name": "@wdk/wdk-secret-manager",
+  "name": "@tetherto/wdk-secret-manager",
   "version": "0.1.0",
   "main": "index.js",
   "scripts": {
