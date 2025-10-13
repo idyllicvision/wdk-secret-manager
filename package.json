@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/wdk-secret-manager",
-  "version": "0.1.0",
+  "version": "v1.0.0-beta.2",
   "main": "index.js",
   "scripts": {
     "build:types": "rimraf *.d.ts **/*.d.ts; tsc",
@@ -29,5 +29,9 @@
   },
   "jest": {
     "transform": {}
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   }
 }
