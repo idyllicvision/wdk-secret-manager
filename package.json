@@ -1,15 +1,15 @@
 {
   "name": "@tetherto/wdk-secret-manager",
-  "version": "v1.0.0-beta.2",
+  "version": "1.0.0-beta.3",
   "main": "index.js",
   "scripts": {
     "build:types": "rimraf *.d.ts **/*.d.ts; tsc",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
   },
-  "homepage": "https://github.com/noxtton/wdk-secret-manager-internal.git",
+  "homepage": "https://github.com/tetherto/wdk-secret-manager.git",
   "author": "Tether",
-  "license": "ISC",
-  "description": "Works with mnemonic and seed buffer",
+  "license": "Apache-2.0",
+  "description": "A package to encrypt mnemonic and seed buffer",
   "dependencies": {
     "b4a": "^1.6.7",
     "bare-crypto": "^1.7.0",
