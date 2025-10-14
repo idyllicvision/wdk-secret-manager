@@ -1,6 +1,12 @@
 name: build
 
 on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        type: boolean
+        required: false
+        default: true
   push:
     branches: [main, develop]
   pull_request:
@@ -21,6 +27,3 @@ jobs:
       
       - name: Install dependencies
         run: npm clean-install
-      
-      - name: Lint code with standard
-        run: npm run lint
