@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/wdk-secret-manager",
-  "version": "v1.0.0-beta.2",
+  "version": "1.0.0-beta.3",
   "main": "index.js",
   "scripts": {
     "build:types": "rimraf *.d.ts **/*.d.ts; tsc",
