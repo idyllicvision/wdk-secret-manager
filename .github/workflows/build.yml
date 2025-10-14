@@ -1,6 +1,12 @@
 name: build
 
 on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        type: boolean
+        required: false
+        default: true
   push:
     branches: [main, develop]
   pull_request:
