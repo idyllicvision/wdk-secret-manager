@@ -1,5 +1,6 @@
 import b4a from 'b4a'
 import bip39 from 'bip39-mnemonic'
+import crypto from 'crypto'
 import sodium from 'sodium-universal'
 
 /**
@@ -58,15 +59,13 @@ export class WdkSecretManager {
     const iterations = 100000
 
     // The digest algorithm
-    const digest = sodium.crypto_pwhash_ALG_DEFAULT
+    const digest = 'sha256'
 
-    const key = b4a.alloc(keySizeInBytes)
-    sodium.crypto_pwhash(
-      key,
+    const key = crypto.pbkdf2Sync(
       this.#passkey,
       this.#salt,
       iterations,
-      sodium.crypto_pwhash_MEMLIMIT_INTERACTIVE,
+      keySizeInBytes,
       digest
     )
 
