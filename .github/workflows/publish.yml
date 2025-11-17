@@ -26,6 +26,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Lint code with standard
+        run: npm run lint
+
   publish:
     needs: test
     runs-on: ubuntu-latest
