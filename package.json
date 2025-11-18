@@ -1,37 +1,63 @@
 {
   "name": "@tetherto/wdk-secret-manager",
-  "version": "1.0.0-beta.3",
-  "main": "index.js",
-  "scripts": {
-    "build:types": "rimraf *.d.ts **/*.d.ts; tsc",
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
-  },
-  "homepage": "https://github.com/tetherto/wdk-secret-manager.git",
+  "version": "1.0.0-beta.4",
+  "description": "A package to encrypt mnemonic and seed buffer",
+  "keywords": [
+    "tetherto",
+    "wdk",
+    "wallet",
+    "encryption",
+    "ethereum",
+    "bitcoin",
+    "blockchain",
+    "secret",
+    "manager"
+  ],
   "author": "Tether",
   "license": "Apache-2.0",
-  "description": "A package to encrypt mnemonic and seed buffer",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/tetherto/wdk-secret-manager.git"
+  },
+  "main": "index.js",
+  "type": "module",
+  "types": "./types",
+  "scripts": {
+    "build:types": "tsc",
+    "lint": "standard",
+    "lint:fix": "standard --fix",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
+  },
   "dependencies": {
     "b4a": "^1.6.7",
-    "bare-crypto": "^1.7.0",
-    "bare-stream": "^2.6.5",
-    "bip39": "^3.1.0",
     "bip39-mnemonic": "^2.5.0",
-    "buffer": "^6.0.3",
-    "events": "^3.3.0",
-    "rimraf": "^5.0.10",
-    "sodium-javascript": "^0.8.0",
-    "sodium-native": "^5.0.6",
     "sodium-universal": "^5.0.1",
-    "typescript": "^5.8.3"
+    "bare-node-runtime": "^1.1.4"
   },
   "devDependencies": {
-    "jest": "^29.7.0"
+    "cross-env": "7.0.3",
+    "jest": "30.1.3",
+    "standard": "17.1.2",
+    "typescript": "5.8.3"
   },
-  "jest": {
-    "transform": {}
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "bare": "./bare.js",
+      "default": "./index.js"
+    },
+    "./package": {
+      "default": "./package.json"
+    }
   },
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
+  },
+  "standard": {
+    "ignore": [
+      "bare.js",
+      "tests/**/*.js"
+    ]
   }
 }
