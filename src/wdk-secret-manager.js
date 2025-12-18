@@ -31,29 +31,33 @@ function writeU32LE (buf, off, val) {
 
 function readU32LE (buf, off) {
   return (
-    buf[off] |
-    (buf[off + 1] << 8) |
-    (buf[off + 2] << 16) |
-    (buf[off + 3] << 24)
-  ) >>> 0
+    (buf[off] |
+      (buf[off + 1] << 8) |
+      (buf[off + 2] << 16) |
+      (buf[off + 3] << 24)) >>>
+    0
+  )
 }
 
 export default class WdkSecretManager {
+  #passkey
+  #salt
+  #iterations
   /**
    * Manages encryption and decryption of secrets using a passkey and salt.
    * Uses PBKDF2 for key derivation and libsodium for cryptographic operations.
    *
-   * @param {Buffer|Uint8Array|string} passKey - The passkey used for encryption (min 12 chars)
-   * @param {Buffer} salt - A 16-byte salt for key derivation
+   * @param {Buffer|Uint8Array} passKeyBuf - The passkey buffer used for encryption (min 12 chars)
+   * @param {Buffer} saltBuf - A 16-byte salt for key derivation
    * @param {{iterations?: number}} [kdfParams] - Optional params for key derivation
    */
-  constructor (passKey, salt, kdfParams = {}) {
-    this._validatePassKey(passKey)
-    this._validateSalt(salt)
+  constructor (passKeyBuf, saltBuf, kdfParams = {}) {
+    this._validatePassKey(passKeyBuf)
+    this._validateSalt(saltBuf)
 
-    /** @private */ this._passkey = typeof passKey === 'string' ? b4a.from(passKey) : b4a.from(passKey)
-    /** @private */ this._salt = b4a.from(salt)
-    /** @private */ this._iterations = kdfParams.iterations ?? DEFAULT_PBKDF2_ITERATIONS
+    this.#passkey = b4a.from(passKeyBuf)
+    this.#salt = b4a.from(saltBuf)
+    this.#iterations = kdfParams.iterations ?? DEFAULT_PBKDF2_ITERATIONS
   }
 
   /**
@@ -71,20 +75,21 @@ export default class WdkSecretManager {
   /**
    * Generate 16-byte entropy, derive mnemonic+seed, and encrypt both.
    *
-   * @param {Buffer|null} entropyOpt - If provided, must be 16 bytes.
-   * @param {Buffer|null} masterKeyOpt - If provided, 32-byte key (skips PBKDF2).
-   * @returns {{encryptedSeed: Buffer, encryptedEntropy: Buffer}} Object containing encrypted seed and entropy buffers
+   * @param {Buffer|null} entropyBuf - If provided, must be 16 bytes.
+   * @param {Buffer|null} masterKeyBuf - If provided, 32-byte key (skips PBKDF2).
+   * @returns {Buffer} Encrypted entropy buffer
    */
-  async generateAndEncrypt (entropyOpt = null, masterKeyOpt = null) {
-    const entropy = entropyOpt ? this._validateEntropy(entropyOpt) : this.generateRandomBuffer()
-    const mnemonic = bip39.entropyToMnemonic(entropy)
-    const seedBuffer = await bip39.mnemonicToSeed(mnemonic) // 64 bytes
+  async generateAndEncrypt (entropyBuf = null, masterKeyBuf = null) {
+    const entropy = entropyBuf
+      ? this._validateEntropy(entropyBuf)
+      : this.generateRandomBuffer()
+    const encryptedEntropy = this.encrypt(entropy, masterKeyBuf)
 
-    const encryptedEntropy = this.encrypt(entropy, masterKeyOpt)
-    const encryptedSeed = this.encrypt(seedBuffer, masterKeyOpt)
-
-    this._safeZero(seedBuffer)
-    return { encryptedSeed, encryptedEntropy }
+    // Only zero entropy if we generated it internally
+    if (!entropyBuf) {
+      this._safeZero(entropy)
+    }
+    return encryptedEntropy
   }
 
   /**
@@ -108,27 +113,30 @@ export default class WdkSecretManager {
    * @returns {Buffer} Encrypted payload with header
    */
   encrypt (data, masterKeyOpt = null) {
-    this._validatePassKey(this._passkey)
-    this._validateSalt(this._salt)
+    this._validatePassKey(this.#passkey)
+    this._validateSalt(this.#salt)
     if (!b4a.isBuffer(data)) throw new Error('Data must be a Buffer')
     const len = data.byteLength
     if (len < MIN_PLAINTEXT || len > MAX_PLAINTEXT) {
-      throw new Error(`Data length must be between ${MIN_PLAINTEXT} and ${MAX_PLAINTEXT} bytes`)
+      throw new Error(
+        `Data length must be between ${MIN_PLAINTEXT} and ${MAX_PLAINTEXT} bytes`
+      )
     }
 
     const header = b4a.alloc(HEADER_BYTES)
     header[0] = VERSION
     header[1] = KDF_ALG.PBKDF2_SHA256
-    writeU32LE(header, 2, this._iterations >>> 0)
+
+    writeU32LE(header, 2, this.#iterations >>> 0)
     writeU32LE(header, 6, 0)
-    header.set(this._salt, 10)
+    header.set(this.#salt, 10)
 
     const nonce = header.subarray(26, 26 + NONCE_BYTES)
     sodium.randombytes_buf(nonce)
 
     const key = masterKeyOpt
       ? this._validateKey32(masterKeyOpt)
-      : this._deriveKeyPBKDF2(this._passkey, this._salt, this._iterations)
+      : this._deriveKeyPBKDF2(this.#passkey, this.#salt, this.#iterations)
 
     const plain = b4a.alloc(1 + len)
     plain[0] = len
@@ -153,8 +161,8 @@ export default class WdkSecretManager {
    * @returns {Buffer} The decrypted plaintext data
    */
   decrypt (payload, masterKeyOpt = null) {
-    this._validatePassKey(this._passkey)
-    this._validateSalt(this._salt)
+    this._validatePassKey(this.#passkey)
+    this._validateSalt(this.#salt)
     if (!b4a.isBuffer(payload)) throw new Error('Payload must be a Buffer')
     if (payload.byteLength < HEADER_BYTES + 1 + MAC_BYTES) {
       throw new Error('Invalid payload: too short')
@@ -165,7 +173,7 @@ export default class WdkSecretManager {
     if (version !== VERSION) throw new Error('Unsupported payload version')
 
     const alg = header[1]
-    if (alg !== KDF_ALG.PBKDF2_SHA256) throw new Error('Unsupported KDF algorithm')
+    if (alg !== KDF_ALG.PBKDF2_SHA256) { throw new Error('Unsupported KDF algorithm') }
 
     const iterations = readU32LE(header, 2)
     const salt = header.subarray(10, 10 + SALT_BYTES)
@@ -176,7 +184,7 @@ export default class WdkSecretManager {
 
     const key = masterKeyOpt
       ? this._validateKey32(masterKeyOpt)
-      : this._deriveKeyPBKDF2(this._passkey, salt, iterations)
+      : this._deriveKeyPBKDF2(this.#passkey, salt, iterations)
 
     const ok = sodium.crypto_secretbox_open_easy(plain, cipher, nonce, key)
     if (!masterKeyOpt) this._safeZero(key)
@@ -236,7 +244,9 @@ export default class WdkSecretManager {
     const hex = bip39.mnemonicToEntropy(mnemonic)
     const buf = b4a.from(hex, 'hex')
     if (buf.byteLength !== 16) {
-      throw new Error('This manager expects 12-word mnemonics (16-byte entropy)')
+      throw new Error(
+        'This manager expects 12-word mnemonics (16-byte entropy)'
+      )
     }
     return buf
   }
@@ -247,11 +257,15 @@ export default class WdkSecretManager {
    * used for further encryption/decryption operations.
    */
   dispose () {
-    if (this._salt) this._safeZero(this._salt)
-    if (this._passkey) this._safeZero(this._passkey)
-    this._salt = null
-    this._passkey = null
-    this._iterations = null
+    if (this.#salt) this._safeZero(this.#salt)
+    if (this.#passkey) this._safeZero(this.#passkey)
+    this.#salt = null
+    this.#passkey = null
+    this.#iterations = null
+  }
+
+  [Symbol.dispose] () {
+    this.dispose()
   }
 
   /** @private */
@@ -267,29 +281,25 @@ export default class WdkSecretManager {
   }
 
   /** @private */
-  _validatePassKey (passKey) {
-    if (!passKey) throw new Error('Pass key must not be empty')
-    if (typeof passKey === 'string') {
-      if (passKey.length < 12) throw new Error('Pass key must be at least 12 characters long')
-      return
-    }
-    if (!b4a.isBuffer(passKey) && !(passKey instanceof Uint8Array)) {
+  _validatePassKey (passKeyBuf) {
+    if (!b4a.isBuffer(passKeyBuf) && !(passKeyBuf instanceof Uint8Array)) {
       throw new Error('Pass key must be a string or Buffer/Uint8Array')
     }
-    if (passKey.byteLength < 12) throw new Error('Binary pass key must be at least 12 bytes')
+    if (passKeyBuf.byteLength < 12) { throw new Error('Binary pass key must be at least 12 bytes') }
   }
 
   /** @private */
-  _validateSalt (salt) {
-    if (!salt) throw new Error('Salt must not be empty')
-    if (!b4a.isBuffer(salt)) throw new Error('Salt must be a Buffer')
-    if (salt.byteLength !== SALT_BYTES) throw new Error(`Salt must be ${SALT_BYTES} bytes`)
+  _validateSalt (saltBuf) {
+    if (!b4a.isBuffer(saltBuf) && !(saltBuf instanceof Uint8Array)) {
+      throw new Error('Salt must be a Buffer or Uint8Array')
+    }
+    if (saltBuf.byteLength !== SALT_BYTES) { throw new Error(`Salt must be ${SALT_BYTES} bytes`) }
   }
 
   /** @private */
   _validateEntropy (buf) {
     if (!b4a.isBuffer(buf)) throw new Error('Entropy must be a Buffer')
-    if (buf.byteLength !== 16) throw new Error('Entropy must be exactly 16 bytes for 12-word mnemonics')
+    if (buf.byteLength !== 16) { throw new Error('Entropy must be exactly 16 bytes for 12-word mnemonics') }
     return buf
   }
 

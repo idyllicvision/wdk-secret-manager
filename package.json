@@ -39,14 +39,14 @@
   },
   "homepage": "https://github.com/tetherto/wdk-secret-manager.git",
   "dependencies": {
-    "bare-wdk-runtime": "2.0.1",
     "b4a": "1.7.3",
+    "bare-wdk-runtime": "2.0.1",
     "bip39-mnemonic": "2.5.0",
     "sodium-native": "5.0.9"
   },
   "devDependencies": {
     "brittle": "3.19.0",
-    "cross-env": "10.1.0",
+    "cross-env": "^10.1.0",
     "jest": "30.2.0",
     "standard": "17.1.2",
     "typescript": "5.9.3"

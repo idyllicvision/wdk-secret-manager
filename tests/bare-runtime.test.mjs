@@ -14,7 +14,7 @@ const ITER = 100_000
 
 test('bare runtime: masterKey flow and round-trip', async t => {
   const salt = WdkSecretManager.generateSalt()
-  const sm = new WdkSecretManager(PASS, salt, { iterations: ITER })
+  const sm = new WdkSecretManager(b4a.from(PASS, 'utf-8'), salt, { iterations: ITER })
   const entropy = sm.generateRandomBuffer()
   const mnemonic = sm.entropyToMnemonic(entropy)
   const seed = await bip39.mnemonicToSeed(mnemonic)
