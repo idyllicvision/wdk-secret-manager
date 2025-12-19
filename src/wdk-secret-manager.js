@@ -299,7 +299,7 @@ export class WdkSecretManager {
   /**
    * Clean up resources.
    */
-  [Symbol.dispose]() {
+  [Symbol.dispose] () {
     this.dispose()
   }
 }
