@@ -18,7 +18,7 @@ export const wdkSaltGenerator = {
 export class WdkSecretManager {
   /**
    *
-   * @param {Buffer | ArrayBuffer | string} passKey - The user's password (e.g., "password123").
+   * @param {Buffer | ArrayBuffer} passKey - The user's password as a Buffer.
    */
   #passkey = null
   /**
@@ -30,7 +30,7 @@ export class WdkSecretManager {
 
   /**
    *
-   * @param {Buffer | ArrayBuffer | Uint8Array | string} passKey - The user's password (e.g., "password123").
+   * @param {Buffer | ArrayBuffer | Uint8Array} passKey - The user's password as a Buffer.
    * @param {Buffer} salt - A unique, random 16-byte salt. This should be
    * generated once per user and stored alongside the
    * encrypted data. It is not a secret.
@@ -83,49 +83,94 @@ export class WdkSecretManager {
    * @returns {{encryptedSeed: Buffer, encryptedEntropy: Buffer}} A Object containing the encrypted seed and entropy.
    */
   async generateAndEncrypt (payload = null, derivedKey = null) {
-    if (payload) if (!b4a.isBuffer(payload)) throw new Error('Payload is not a buffer!')
+    if (payload && !b4a.isBuffer(payload)) {
+      throw new Error('Payload is not a buffer!')
+    }
     const entropy = payload || this.generateRandomBuffer()
-    const seedBuffer = await bip39.mnemonicToSeed(bip39.entropyToMnemonic(entropy))
 
-    const encryptedSeed = this.#encrypt(seedBuffer, seedBuffer.byteLength, derivedKey)
-    const encryptedEntropy = this.#encrypt(entropy, entropy.byteLength, derivedKey)
+    let entropyZeroed = false
+    let seedZeroed = false
+    let seedBuffer = null
 
-    return { encryptedSeed, encryptedEntropy }
+    const key = derivedKey || this.#deriveKeyFromPassKey()
+
+    try {
+      seedBuffer = await bip39.mnemonicToSeed(bip39.entropyToMnemonic(entropy))
+
+      const encryptedSeed = this.#encrypt(
+        seedBuffer,
+        seedBuffer.byteLength,
+        key
+      )
+      seedZeroed = true
+
+      const encryptedEntropy = this.#encrypt(entropy, entropy.byteLength, key)
+      entropyZeroed = true
+
+      return { encryptedSeed, encryptedEntropy }
+    } finally {
+      if (!derivedKey && b4a.isBuffer(key)) {
+        sodium.sodium_memzero(key)
+      }
+
+      if (!entropyZeroed && b4a.isBuffer(entropy)) {
+        sodium.sodium_memzero(entropy)
+      }
+
+      if (!seedZeroed && b4a.isBuffer(seedBuffer)) {
+        sodium.sodium_memzero(seedBuffer)
+      }
+    }
   }
 
   /**
    * Encrypt entropy or seed buffer
-   * @param {Buffer} buffer.
-   * @param {number} buffLength.
+   * @param {Buffer} buffer - The buffer to encrypt (will be zeroed after encryption).
+   * @param {number} buffLength - The length of the buffer.
    * @param {Buffer} [derivedKey=null] - Optional ArrayBuffer(32) bytes cryptographic key.
    * @return {Buffer} A Buffer containing the encrypted payload.
    */
   #encrypt (buffer, buffLength, derivedKey = null) {
     if (!b4a.isBuffer(buffer)) throw new Error('Payload is not a buffer!')
     if (!buffLength) throw new Error('Incorrect buffer length')
-    if (derivedKey) if (!b4a.isBuffer(derivedKey)) throw new Error('derivedKey is not a buffer!')
-    const key = derivedKey || this.#deriveKeyFromPassKey()
-    if (buffer.byteLength > 64 || buffer.byteLength < 16) { throw new Error('Buffer size must be between 16 and 64') }
+    if (derivedKey && !b4a.isBuffer(derivedKey)) {
+      throw new Error('derivedKey is not a buffer!')
+    }
+
+    if (buffer.byteLength > 64 || buffer.byteLength < 16) {
+      throw new Error('Buffer size must be between 16 and 64')
+    }
 
     const nonce = b4a.alloc(sodium.crypto_secretbox_NONCEBYTES)
     sodium.randombytes_buf(nonce)
 
-    const payload = b4a.alloc(
-      1 + sodium.crypto_secretbox_NONCEBYTES + 1 + buffLength + sodium.crypto_secretbox_MACBYTES
-    )
-    payload[0] = 0 // version
-    payload.set(nonce, 1)
+    try {
+      const payload = b4a.alloc(
+        1 +
+          sodium.crypto_secretbox_NONCEBYTES +
+          1 +
+          buffLength +
+          sodium.crypto_secretbox_MACBYTES
+      )
+      payload[0] = 0 // version
+      payload.set(nonce, 1)
 
-    const cipher = payload.subarray(1 + nonce.byteLength)
-    const plain = cipher.subarray(0, cipher.byteLength - sodium.crypto_secretbox_MACBYTES)
-    plain[0] = buffer.byteLength
-    plain.set(buffer, 1)
+      const cipher = payload.subarray(1 + nonce.byteLength)
+      const plain = cipher.subarray(
+        0,
+        cipher.byteLength - sodium.crypto_secretbox_MACBYTES
+      )
+      plain[0] = buffer.byteLength
+      plain.set(buffer, 1)
 
-    sodium.sodium_memzero(buffer)
-    // encrypt in-place
-    sodium.crypto_secretbox_easy(cipher, plain, nonce, key)
+      // encrypt in-place
+      sodium.crypto_secretbox_easy(cipher, plain, nonce, derivedKey)
 
-    return payload
+      return payload
+    } finally {
+      sodium.sodium_memzero(buffer)
+      sodium.sodium_memzero(nonce)
+    }
   }
 
   /**
@@ -138,8 +183,14 @@ export class WdkSecretManager {
     if (!b4a.isBuffer(payload)) {
       throw new Error('Payload is not a buffer!')
     }
-    if (derivedKey) if (!b4a.isBuffer(derivedKey)) throw new Error('derivedKey is not a buffer!')
-    const minLength = 1 + sodium.crypto_secretbox_NONCEBYTES + 1 + sodium.crypto_secretbox_MACBYTES
+    if (derivedKey && !b4a.isBuffer(derivedKey)) {
+      throw new Error('derivedKey is not a buffer!')
+    }
+    const minLength =
+      1 +
+      sodium.crypto_secretbox_NONCEBYTES +
+      1 +
+      sodium.crypto_secretbox_MACBYTES
     if (payload.byteLength < minLength) {
       throw new Error('Invalid payload: too short')
     }
@@ -147,26 +198,41 @@ export class WdkSecretManager {
     if (payload[0] !== 0) {
       throw new Error('Invalid version')
     }
+
+    // Derive key if not provided
     const key = derivedKey || this.#deriveKeyFromPassKey()
+    const shouldZeroKey = !derivedKey
+
     const nonce = payload.subarray(1, 1 + sodium.crypto_secretbox_NONCEBYTES)
     const cipher = payload.subarray(1 + nonce.byteLength)
 
-    const plain = b4a.alloc(cipher.byteLength - sodium.crypto_secretbox_MACBYTES)
-    if (!sodium.crypto_secretbox_open_easy(plain, cipher, nonce, key)) {
-      throw new Error('Decryption failed')
-    }
-    const bytes = plain[0]
-    if (bytes > 64) {
-      throw new Error('Invalid decrypted payload')
-    }
+    const plain = b4a.alloc(
+      cipher.byteLength - sodium.crypto_secretbox_MACBYTES
+    )
 
-    if (plain.byteLength < 1 + bytes) {
-      throw new Error('Invalid decrypted payload: inconsistent length')
+    try {
+      if (!sodium.crypto_secretbox_open_easy(plain, cipher, nonce, key)) {
+        throw new Error('Decryption failed')
+      }
+      const bytes = plain[0]
+      if (bytes > 64) {
+        throw new Error('Invalid decrypted payload')
+      }
+
+      if (plain.byteLength < 1 + bytes) {
+        throw new Error('Invalid decrypted payload: inconsistent length')
+      }
+      const resultBuffer = b4a.alloc(bytes)
+      resultBuffer.set(plain.subarray(1, 1 + bytes))
+      return resultBuffer
+    } finally {
+      // Always zero the plaintext buffer
+      sodium.sodium_memzero(plain)
+      // Zero the derived key if we created it
+      if (shouldZeroKey && b4a.isBuffer(key)) {
+        sodium.sodium_memzero(key)
+      }
     }
-    const resultBuffer = b4a.alloc(bytes)
-    resultBuffer.set(plain.subarray(1, 1 + bytes))
-    sodium.sodium_memzero(plain)
-    return resultBuffer
   }
 
   /**
@@ -203,8 +269,8 @@ export class WdkSecretManager {
     if (!passKey) {
       throw new Error('Pass key must not be empty!')
     }
-    if (typeof passKey !== 'string' && !b4a.isBuffer(passKey)) {
-      throw new Error('Pass key must be a string or Buffer!')
+    if (!b4a.isBuffer(passKey)) {
+      throw new Error('Pass key must be a Buffer!')
     }
   }
 
@@ -224,9 +290,16 @@ export class WdkSecretManager {
    * Erase the salt and passkey from memory.
    */
   dispose () {
-    sodium.sodium_memzero(this.#salt)
-    if (b4a.isBuffer(this.#passkey)) sodium.sodium_memzero(this.#passkey)
+    if (this.#salt) sodium.sodium_memzero(this.#salt)
+    if (this.#passkey) sodium.sodium_memzero(this.#passkey)
     this.#passkey = null
     this.#salt = null
+  }
+
+  /**
+   * Clean up resources.
+   */
+  [Symbol.dispose]() {
+    this.dispose()
   }
 }
