@@ -272,14 +272,12 @@ describe("WdkSecretManager (unit)", () => {
     test("passkey buffer is zeroed after dispose", () => {
       const passBuffer = b4a.from("sensitive passkey data");
       const salt = wdkSaltGenerator.generate();
-      // Verify passkey has content before
       const isNonZeroBefore = passBuffer.some((byte) => byte !== 0);
       expect(isNonZeroBefore).toBe(true);
 
       const sm = new WdkSecretManager(passBuffer, salt);
       sm.dispose();
 
-      // After dispose, passkey should be zeroed
       const isAllZeros = passBuffer.every((byte) => byte === 0);
       expect(isAllZeros).toBe(true);
     });
@@ -287,14 +285,12 @@ describe("WdkSecretManager (unit)", () => {
     test("salt buffer is zeroed after dispose", () => {
       const passBuffer = b4a.from("sensitive passkey data");
       const salt = wdkSaltGenerator.generate();
-      // Verify salt has content before
       const isNonZeroBefore = salt.some((byte) => byte !== 0);
       expect(isNonZeroBefore).toBe(true);
 
       const sm = new WdkSecretManager(passBuffer, salt);
       sm.dispose();
 
-      // After dispose, salt should be zeroed
       const isAllZeros = salt.every((byte) => byte === 0);
       expect(isAllZeros).toBe(true);
     });
@@ -304,45 +300,37 @@ describe("WdkSecretManager (unit)", () => {
     test("entropy buffer is zeroed after generateAndEncrypt", async () => {
       const sm = new WdkSecretManager(PASS, wdkSaltGenerator.generate());
       const entropy = rand(16);
-      // Verify entropy has content before
       const isNonZeroBefore = entropy.some((byte) => byte !== 0);
       expect(isNonZeroBefore).toBe(true);
 
       await sm.generateAndEncrypt(entropy);
 
-      // After encryption, entropy should be zeroed
       const isAllZeros = entropy.every((byte) => byte === 0);
       expect(isAllZeros).toBe(true);
     });
 
     test("entropy is zeroed even if encryption fails", async () => {
       const sm = new WdkSecretManager(PASS, wdkSaltGenerator.generate());
-      // Create entropy that's too small - will fail validation
       const entropy = rand(16);
       const entropyCopy = b4a.from(entropy);
 
-      // Verify entropy has content before
       const isNonZeroBefore = entropy.some((byte) => byte !== 0);
       expect(isNonZeroBefore).toBe(true);
 
-      // Use valid entropy first, then dispose to cause failure on next call
       await sm.generateAndEncrypt(entropyCopy);
       sm.dispose();
 
-      // Now entropy should be zeroed after the first encryption
       const isAllZeros = entropyCopy.every((byte) => byte === 0);
       expect(isAllZeros).toBe(true);
     });
 
     test("derived key is zeroed after decrypt when not provided", async () => {
-      // Indirect test - multiple decrypts work correctly
       const sm = new WdkSecretManager(PASS, wdkSaltGenerator.generate());
       const entropy = rand(16);
       const entropyCopy = b4a.from(entropy);
 
       const { encryptedEntropy } = await sm.generateAndEncrypt(entropy);
 
-      // Multiple decrypts should work (fresh key derived each time)
       const dec1 = sm.decrypt(encryptedEntropy);
       const dec2 = sm.decrypt(encryptedEntropy);
 
@@ -358,7 +346,6 @@ describe("WdkSecretManager (unit)", () => {
 
       await sm.generateAndEncrypt(entropy, customKey);
 
-      // Custom key should NOT be zeroed - caller owns it
       expect(eq(customKey, customKeyCopy)).toBe(true);
     });
   });
@@ -367,7 +354,6 @@ describe("WdkSecretManager (unit)", () => {
     test("encrypts minimum payload size (16 bytes)", async () => {
       const sm = new WdkSecretManager(PASS, wdkSaltGenerator.generate());
       const data = rand(16);
-      // Copy before encryption since encrypt zeros the original buffer
       const dataCopy = b4a.from(data);
       const { encryptedEntropy } = await sm.generateAndEncrypt(data);
       const decrypted = sm.decrypt(encryptedEntropy);
