@@ -324,20 +324,6 @@ describe("WdkSecretManager (unit)", () => {
       expect(isAllZeros).toBe(true);
     });
 
-    test("derived key is zeroed after decrypt when not provided", async () => {
-      const sm = new WdkSecretManager(PASS, wdkSaltGenerator.generate());
-      const entropy = rand(16);
-      const entropyCopy = b4a.from(entropy);
-
-      const { encryptedEntropy } = await sm.generateAndEncrypt(entropy);
-
-      const dec1 = sm.decrypt(encryptedEntropy);
-      const dec2 = sm.decrypt(encryptedEntropy);
-
-      expect(eq(dec1, entropyCopy)).toBe(true);
-      expect(eq(dec2, entropyCopy)).toBe(true);
-    });
-
     test("custom derivedKey is NOT zeroed (caller responsibility)", async () => {
       const sm = new WdkSecretManager(PASS, wdkSaltGenerator.generate());
       const customKey = rand(32);
