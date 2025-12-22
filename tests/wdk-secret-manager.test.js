@@ -139,6 +139,22 @@ describe("WdkSecretManager (unit)", () => {
       );
     });
 
+    test("rejects payload smaller than 16 bytes", async () => {
+      const sm = new WdkSecretManager(PASS, wdkSaltGenerator.generate());
+      const smallPayload = rand(15);
+      await expect(sm.generateAndEncrypt(smallPayload)).rejects.toThrow(
+        /seed must be a multiple of 4 bytes/i
+      );
+    });
+
+    test("rejects payload larger than 64 bytes", async () => {
+      const sm = new WdkSecretManager(PASS, wdkSaltGenerator.generate());
+      const largePayload = rand(65);
+      await expect(sm.generateAndEncrypt(largePayload)).rejects.toThrow(
+        /Invalid mnemonic/i
+      );
+    });
+
     test("with known entropy matches BIP39 seed", async () => {
       const sm = new WdkSecretManager(PASS, wdkSaltGenerator.generate());
       const knownEntropy = rand(16);
